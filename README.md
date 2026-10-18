@@ -79,15 +79,21 @@ Reproducing the reported SGM values requires the same test instances and paramet
 
 ## Citation
 
-If this code is used in research, please cite the accompanying manuscript:
+If this code is used in research, please cite:
 
-> Shengyu Sun, Rui-Jin Zhang, Ruoyu Diao, and Yu-Hong Dai. *A Multiscale Primal–Dual Interior-Point Relaxation Method for Large-Scale Optimal Transport Problems.* Manuscript.
+> Shengyu Sun, Rui-Jin Zhang, Ruoyu Diao, and Yu-Hong Dai.
+> *A Multiscale Primal–Dual Interior-Point Relaxation Method for Large-Scale Optimal Transport Problems.*
+> [arXiv:2608.12060](https://arxiv.org/abs/2608.12060), 2026.
 
 ```bibtex
-@unpublished{sun_msiprm_ot,
-  author = {Sun, Shengyu and Zhang, Rui-Jin and Diao, Ruoyu and Dai, Yu-Hong},
-  title  = {A Multiscale Primal--Dual Interior-Point Relaxation Method
-            for Large-Scale Optimal Transport Problems},
-  note   = {Manuscript}
+@misc{sun_msiprm_ot,
+  author        = {Sun, Shengyu and Zhang, Rui-Jin and Diao, Ruoyu and Dai, Yu-Hong},
+  title         = {A Multiscale Primal--Dual Interior-Point Relaxation Method
+                   for Large-Scale Optimal Transport Problems},
+  year          = {2026},
+  eprint        = {2608.12060},
+  archivePrefix = {arXiv},
+  primaryClass  = {math.OC},
+  url           = {https://arxiv.org/abs/2608.12060}
 }
 ```
