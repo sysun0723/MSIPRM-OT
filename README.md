@@ -91,16 +91,3 @@ If this code is used in research, please cite the accompanying manuscript:
   note   = {Manuscript}
 }
 ```
-
-## Contact
-
-**Shengyu Sun**  
-E-mail: [sunshengyu@lsec.cc.ac.cn](mailto:sunshengyu@lsec.cc.ac.cn)
-
-For questions about the implementation, please include the MATLAB version, test instances, parameter settings, and any error message.
-
-## Copyright
-
-Copyright © 2026 Shengyu Sun.
-
-A license has not yet been specified for this repository. Please contact Shengyu Sun for licensing enquiries.
