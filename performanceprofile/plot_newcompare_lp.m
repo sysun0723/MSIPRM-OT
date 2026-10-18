@@ -106,7 +106,6 @@ axis([1 N 0 1 ]);
 % semilogx(t_t,perf_func_t(:,7), 'LineStyle',':', 'LineWidth', 2);
 % hold on;
 
-% Step 5: 绘制图形
 hold on;
 grid on;
 fig.Position = [1000,600,400,300];
