@@ -1,8 +1,8 @@
 # MSIPRM-OT
 
-MATLAB implementation of the **multiscale primal–dual interior-point relaxation method (MSIPRM)** for large-scale discrete optimal transport with squared Euclidean costs.
+MATLAB implementation of the **multiscale primal–dual interior-point relaxation method (MSIPRM)** for large-scale optimal transport (OT) problems with the squared Euclidean cost.
 
-The method combines a multiscale hierarchy, adaptive sparse active sets, and an interior-point relaxation solver. Coarse-grid solutions initialize finer-grid problems, while support identification reduces the number of transport variables handled by the solver.
+The multiscale framework constructs a hierarchy of OT problems at progressively finer levels. At each level, the OT problem is solved over a sequence of adaptively refined active sets, with the initial active set constructed from the support estimate at the previous level. The primal–dual interior-point relaxation method (IPRM) serves as the inner solver for each sparse subproblem.
 
 This repository accompanies the manuscript:
 
@@ -11,104 +11,71 @@ This repository accompanies the manuscript:
 
 ## Implementation
 
-### MATLAB version
+MSIPRM is implemented in MATLAB. The code is located in the repository root.
 
-The solver sources are located in the repository root.
-
-- **Multiscale framework:** solves transport problems on progressively finer image grids.
-- **Sparse active sets:** constructs and refines candidate transport supports using coarse-grid solutions and dual information.
-- **Interior-point relaxation:** allows warm starts from solutions of preceding subproblems.
-- **Reduced linear systems:** uses the sparse structure of the transport constraints when computing Newton directions.
+- **Multiscale method:** constructs the initial active set for a finer-scale problem from the support estimate at a coarser scale.
+- **Active-set updates:** identify violated dual constraints and refine the active set for the full OT problem.
+- **Interior-point relaxation method:** uses the solution of the previous subproblem as a warm start.
+- **Schur complement system:** computes the Newton direction by solving a reduced Schur complement system derived from the normal equations.
 
 | File or directory | Purpose |
 | --- | --- |
-| [`demo.m`](demo.m) | Multiscale experiment driver for DOTmark image pairs. |
-| [`iprm4denseot.m`](iprm4denseot.m) | Dense IPRM solver used for the coarsest-grid initialization. |
-| [`iprm4sparseot.m`](iprm4sparseot.m) | IPRM solver for sparse transport subproblems. |
-| [`enlarge_Spt.m`](enlarge_Spt.m) | Constructs a finer-grid candidate support from a coarse-grid transport plan. |
-| [`getSpts.m`](getSpts.m) | Searches occupied support blocks for negative reduced-cost entries. |
-| [`extract_connected_components_bipartite.m`](extract_connected_components_bipartite.m) | Identifies connected components of the bipartite support graph. |
-| [`data/`](data/) | Scripts generating the five synthetic test measures. |
-| [`data_2048/`](data_2048/) | A large-scale experiment log and scripts plotting recorded iteration and timing data. |
-| [`performanceprofile/`](performanceprofile/) | Stored solver timings and a performance-profile plotting script. |
+| [`demo.m`](demo.m) | Numerical experiments on the DOTmark dataset. |
+| [`iprm4denseot.m`](iprm4denseot.m) | Solves the dense OT problem at the coarsest level using IPRM. |
+| [`iprm4sparseot.m`](iprm4sparseot.m) | Solves sparse subproblems using IPRM. |
+| [`enlarge_Spt.m`](enlarge_Spt.m) | Constructs the initial active set at a finer level from the support estimate at the previous level. |
+| [`getSpts.m`](getSpts.m) | Identifies violated dual constraints for active-set updates. |
+| [`extract_connected_components_bipartite.m`](extract_connected_components_bipartite.m) | Identifies the connected components of the bipartite graph associated with the active set. |
+| [`data/`](data/) | Constructs the five test measures described in Section 6.4 and Figure 4. |
+| [`data_2048/`](data_2048/) | Computational details and plotting scripts for an OT problem on a $2048\times2048$ grid. |
+| [`performanceprofile/`](performanceprofile/) | Running times and the script for plotting running-time performance profiles. |
 
-## Requirements
+For active-set updates, `getSpts.m` evaluates dual constraints in matrix blocks containing entries of the current active set. Dual constraints in the remaining blocks are not evaluated by this function.
 
-- **MATLAB.** The experiments described in the manuscript used MATLAB R2024b on an Intel Core i7-14700 machine with 64 GB of RAM.
-- **DOTmark data** for the image benchmark in `demo.m`. The dataset is distributed separately; see [DOTmark — A Benchmark for Discrete Optimal Transport](https://arxiv.org/abs/1610.03368).
-- **Statistics and Machine Learning Toolbox** for the `randsample` call in the performance-profile script.
+## Experimental Setup
 
-## Getting started
+- **MATLAB.** The experiments in the manuscript were performed using MATLAB R2024b on a machine equipped with an Intel Core i7-14700 processor and 64 GB of RAM.
+- **DOTmark dataset.** Download the dataset separately for the experiments in `demo.m`; see [DOTmark — A Benchmark for Discrete Optimal Transport](https://arxiv.org/abs/1610.03368).
+- **Statistics and Machine Learning Toolbox.** Required for the `randsample` call in the performance-profile script.
 
-### Small solver example
+### DOTmark experiments
 
-Set MATLAB's current folder to the repository root. The following example solves transport between two measures on a 2-by-2 grid with unit grid spacing, using only the dense solver:
-
-```matlab
-a = ones(4, 1) / 4;
-b = [1; 1; 3; 3] / 8;
-massScale = norm([a; b]);
-
-[x, s, lambda, z, status, iter] = iprm4denseot(4, 4, a, b, 0);
-
-% Restore the mass scaling applied internally by the solver.
-P = reshape(x, 4, 4) * massScale;
-
-% Squared Euclidean costs in MATLAB's grid ordering.
-index = (0:3)';
-row = mod(index, 2);
-col = floor(index / 2);
-C = (row - row').^2 + (col - col').^2;
-
-transportCost = sum(C(:) .* P(:));
-marginalError = norm([sum(P, 1)' - a; sum(P, 2) - b]);
-fprintf('Status: %d; iterations: %d\n', status, iter);
-fprintf('Transport cost: %.8f; marginal error: %.3e\n', ...
-        transportCost, marginalError);
-```
-
-The optimal quadratic transport cost is **0.25**. Here, columns of `P` correspond to `a` and rows correspond to `b`.
-
-### Multiscale DOTmark experiments
-
-The support-search routine `getSpts.m` is included in the repository root. It searches blocks occupied by the current support; it does not perform an exhaustive search over all transport pairs.
-
-1. Download and extract the DOTmark data, preserving its category directories and CSV filenames.
+1. Download and extract the DOTmark dataset, preserving the directories for the image classes and the CSV filenames.
 2. In the local `loadData` function in `demo.m`, set `basePath` to the extracted `Data` directory. For example, this directory should contain `CauchyDensity/data32_1002.csv`.
-3. Set `save_path` in `demo.m` to an existing output directory. The current script contains a machine-specific path and a fixed `1024` directory label; update both for the experiment being run.
-4. Choose the resolution through `scale`, the image categories through the `for type = ...` loop, and the image pairs through `pairs`.
-5. With the repository root as MATLAB's current folder, run:
+3. Set `save_path` in `demo.m` to an existing output directory. Update the path and the fixed `1024` directory name to match the experiment.
+4. Set `scale` to the image resolution, choose the image classes in the `for type = ...` loop, and specify the image pairs in `pairs`.
+5. Set MATLAB's current folder to the repository root and run:
 
 ```matlab
 addpath(pwd);
 run('demo.m');
 ```
 
-The current defaults select **25 instances at 32-by-32 resolution**: five image pairs in each of the first five DOTmark categories. The multiscale hierarchy starts with a **16-by-16** dense initialization. Results are written to CSV files named `matlab-<type>-<scale>.csv` in the configured output directory.
+The current settings in `demo.m` select **25 test instances at resolution $32\times32$**: five image pairs from each of the first five DOTmark image classes. The OT problem at the coarsest level is solved on a **$16\times16$ grid**. Results are saved as `matlab-<type>-<scale>.csv` in the specified output directory.
 
-## Experimental data
+## Numerical Results
 
-### Synthetic measures
+### Test measures
 
-The scripts in [`data/`](data/) generate normalized discrete measures and save the probability matrix as the variable `Z`.
+The scripts in [`data/`](data/) discretize the two-dimensional probability distributions described in Section 6.4. Each script normalizes the discrete measure to have unit total mass and saves it as the variable `Z`.
 
-| Script | Measure | Output file |
+| Script | Distribution in Figure 4 | Output file |
 | --- | --- | --- |
-| `SingleCauchy.m` | Single Cauchy-type component | `Singlecauchy.mat` |
-| `SingleGauss.m` | Single Gaussian-type component | `Singlegauss.mat` |
-| `dualCauchy.m` | Two Cauchy-type components | `dualcauchy.mat` |
-| `dualGauss.m` | Two Gaussian-type components | `dualgauss.mat` |
-| `CauchyGauss.m` | Cauchy–Gaussian mixture | `cauchygauss.mat` |
+| `SingleCauchy.m` | A single Cauchy distribution | `Singlecauchy.mat` |
+| `SingleGauss.m` | A single Gaussian distribution | `Singlegauss.mat` |
+| `dualCauchy.m` | Two Cauchy distributions | `dualcauchy.mat` |
+| `dualGauss.m` | Two Gaussian distributions | `dualgauss.mat` |
+| `CauchyGauss.m` | A mixture of a Cauchy distribution and a Gaussian distribution | `cauchygauss.mat` |
 
-The default resolution is 1024-by-1024. Set `imageSize` in each script to generate another resolution. Use a separate output directory or filename for each resolution, since the scripts use fixed output filenames. The supplied `demo.m` reads DOTmark CSV files; a driver loading `Z` is needed to solve these synthetic instances.
+The current resolution in these scripts is $1024\times1024$. Set `imageSize` to generate the measures at another resolution. Use a separate output directory or filename for each resolution, since the scripts use fixed output filenames. The supplied `demo.m` reads DOTmark CSV files; experiments with these test measures require a script that loads `Z` from the MAT files.
 
-### Timings and plots
+### Running times and performance profiles
 
-- [`performanceprofile/solvingtime/`](performanceprofile/solvingtime/) contains timing arrays for several solvers and resolutions. These are recorded results; the competing solver implementations are separate dependencies.
-- [`performanceprofile/plot_newcompare_lp.m`](performanceprofile/plot_newcompare_lp.m) processes timing arrays and plots performance profiles. Before use, update its input paths, sampling indices, shift parameter, time limit, and solver labels for the chosen experiment. The 128-resolution directory is currently named `sclale_128`.
-- [`data_2048/Guass-Cauchy_Gauss.txt`](data_2048/Guass-Cauchy_Gauss.txt) records a large-scale synthetic run. [`Iter_time.m`](data_2048/Iter_time.m) and [`Fill_lineartime.m`](data_2048/Fill_lineartime.m) plot values recorded from that experiment.
+- [`performanceprofile/solvingtime/`](performanceprofile/solvingtime/) contains recorded running times for several solvers and resolutions. The implementations of the competing solvers are obtained separately.
+- [`performanceprofile/plot_newcompare_lp.m`](performanceprofile/plot_newcompare_lp.m) computes the shifted geometric mean (SGM) and normalized SGM and plots running-time performance profiles. Before use, update the input paths, selected test instances, shift parameter, time limit, and solver names for the experiment. The directory for resolution $128\times128$ is currently named `sclale_128`.
+- [`data_2048/Guass-Cauchy_Gauss.txt`](data_2048/Guass-Cauchy_Gauss.txt) records an experiment on a $2048\times2048$ grid. [`Iter_time.m`](data_2048/Iter_time.m) plots the number of IPRM iterations and running time. [`Fill_lineartime.m`](data_2048/Fill_lineartime.m) plots the average time per step for solving the linear system and the average filling rate of the active set.
 
-Exact reproduction of aggregate timings requires the same test-instance indices and settings. The timing arrays do not provide the original instance indices for every sampled subset, and some manuscript experiments require additional drivers. Running times also depend on the hardware and MATLAB version.
+Reproducing the reported SGM values requires the same test instances and parameter settings. The recorded running times do not include the original image-pair indices for every set of randomly selected instances, and additional scripts are needed for some experiments in the manuscript. Running times also depend on the machine and MATLAB version.
 
 ## Citation
 
@@ -130,7 +97,7 @@ If this code is used in research, please cite the accompanying manuscript:
 **Shengyu Sun**  
 E-mail: [sunshengyu@lsec.cc.ac.cn](mailto:sunshengyu@lsec.cc.ac.cn)
 
-For questions about the implementation, please include the MATLAB version, input data or instance identifiers, parameter settings, and any error message.
+For questions about the implementation, please include the MATLAB version, test instances, parameter settings, and any error message.
 
 ## Copyright
 
