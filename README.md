@@ -36,7 +36,6 @@ The solver sources are located in the repository root.
 
 - **MATLAB.** The experiments described in the manuscript used MATLAB R2024b on an Intel Core i7-14700 machine with 64 GB of RAM.
 - **DOTmark data** for the image benchmark in `demo.m`. The dataset is distributed separately; see [DOTmark — A Benchmark for Discrete Optimal Transport](https://arxiv.org/abs/1610.03368).
-- **Statistics and Machine Learning Toolbox** for the `randsample` call in the performance-profile script.
 
 ## Getting started
 
