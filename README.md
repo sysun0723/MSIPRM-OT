@@ -11,8 +11,6 @@ This repository accompanies the manuscript:
 
 ## Implementation
 
-MSIPRM is implemented in MATLAB. The code is located in the repository root.
-
 - **Multiscale method:** constructs the initial active set for a finer-scale problem from the support estimate at a coarser scale.
 - **Active-set updates:** identify violated dual constraints and refine the active set for the full OT problem.
 - **Interior-point relaxation method:** uses the solution of the previous subproblem as a warm start.
