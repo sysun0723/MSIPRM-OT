@@ -2,18 +2,13 @@
 
 MATLAB implementation of the **multiscale primal–dual interior-point relaxation method (MSIPRM)** for large-scale optimal transport (OT) problems with the squared Euclidean cost.
 
-The multiscale framework constructs a hierarchy of OT problems at progressively finer levels. At each level, the OT problem is solved over a sequence of adaptively refined active sets, with the initial active set constructed from the support estimate at the previous level. The primal–dual interior-point relaxation method (IPRM) serves as the inner solver for each sparse subproblem.
-
-This repository accompanies the manuscript:
-
-> Shengyu Sun, Rui-Jin Zhang, Ruoyu Diao, and Yu-Hong Dai.  
-> **A Multiscale Primal–Dual Interior-Point Relaxation Method for Large-Scale Optimal Transport Problems.**
+See [Citation](#citation) for the accompanying paper.
 
 ## Implementation
 
-- **Multiscale method:** constructs the initial active set for a finer-scale problem from the support estimate at a coarser scale.
-- **Active-set updates:** identify violated dual constraints and refine the active set for the full OT problem.
-- **Interior-point relaxation method:** uses the solution of the previous subproblem as a warm start.
+- **Multiscale method:** constructs a hierarchy of OT problems at progressively finer levels and initializes the active set at each finer level from the support estimate at the previous level.
+- **Active-set updates:** add indices corresponding to violated dual constraints to the active set at the current level.
+- **Interior-point relaxation method:** solves each sparse subproblem using the solution of the previous subproblem as a warm start.
 - **Schur complement system:** computes the Newton direction by solving a reduced Schur complement system derived from the normal equations.
 
 | File or directory | Purpose |
@@ -23,7 +18,7 @@ This repository accompanies the manuscript:
 | [`iprm4sparseot.m`](iprm4sparseot.m) | Solves sparse subproblems using IPRM. |
 | [`enlarge_Spt.m`](enlarge_Spt.m) | Constructs the initial active set at a finer level from the support estimate at the previous level. |
 | [`getSpts.m`](getSpts.m) | Identifies violated dual constraints for active-set updates. |
-| [`extract_connected_components_bipartite.m`](extract_connected_components_bipartite.m) | Identifies the connected components of the bipartite graph associated with the active set. |
+| [`extract_connected_components_bipartite.m`](extract_connected_components_bipartite.m) | Counts the connected components of the bipartite graph and, when it is disconnected, adds edges from the original support set to repair the active set. |
 | [`data/`](data/) | Constructs the five test measures described in Section 6.4 and Figure 4. |
 | [`data_2048/`](data_2048/) | Computational details and plotting scripts for an OT problem on a $2048\times2048$ grid. |
 | [`performanceprofile/`](performanceprofile/) | Running times and the script for plotting running-time performance profiles. |
@@ -32,24 +27,25 @@ For active-set updates, `getSpts.m` evaluates dual constraints in matrix blocks 
 
 ## Experimental Setup
 
-- **MATLAB.** The experiments in the manuscript were performed using MATLAB R2024b on a machine equipped with an Intel Core i7-14700 processor and 64 GB of RAM.
+- **MATLAB.** The experiments in the paper were performed using MATLAB R2024b on a machine equipped with an Intel Core i7-14700 processor and 64 GB of RAM.
 - **DOTmark dataset.** Download the dataset separately for the experiments in `demo.m`; see [DOTmark — A Benchmark for Discrete Optimal Transport](https://arxiv.org/abs/1610.03368).
 - **Statistics and Machine Learning Toolbox.** Required for the `randsample` call in the performance-profile script.
 
 ### DOTmark experiments
 
 1. Download and extract the DOTmark dataset, preserving the directories for the image classes and the CSV filenames.
-2. In the local `loadData` function in `demo.m`, set `basePath` to the extracted `Data` directory. For example, this directory should contain `CauchyDensity/data32_1002.csv`.
-3. Set `save_path` in `demo.m` to an existing output directory. Update the path and the fixed `1024` directory name to match the experiment.
-4. Set `scale` to the image resolution, choose the image classes in the `for type = ...` loop, and specify the image pairs in `pairs`.
-5. Set MATLAB's current folder to the repository root and run:
+2. Place `DOTmark_1.0` in the repository root so that, for example, `DOTmark_1.0/Data/CauchyDensity/data32_1002.csv` is available. If the dataset is stored elsewhere, update `basePath` in the local `loadData` function in `demo.m`.
+3. Set `type` to the image class, `num1` and `num2` to the two image indices, and `scale` to the image resolution.
+4. Set MATLAB's current folder to the repository root and run:
 
 ```matlab
 addpath(pwd);
 run('demo.m');
 ```
 
-The current settings in `demo.m` select **25 test instances at resolution $32\times32$**: five image pairs from each of the first five DOTmark image classes. The OT problem at the coarsest level is solved on a **$16\times16$ grid**. Results are saved as `matlab-<type>-<scale>.csv` in the specified output directory.
+The current settings in `demo.m` solve one OT problem between images **1004 and 1005 in the ClassicImages class at resolution $512\times512$**. The OT problem at the coarsest level is solved on a **$16\times16$ grid**.
+
+The batch loops and CSV output are currently commented out. For batch experiments, enable the `pairs` definition, the loops, and the corresponding result collection and CSV output code. Set `save_path` to an existing output directory and replace the fixed `1024` directory name with the actual resolution. Results are saved as `matlab-<type>-<scale>.csv` when CSV output is enabled.
 
 ## Numerical Results
 
@@ -73,7 +69,7 @@ The current resolution in these scripts is $1024\times1024$. Set `imageSize` to 
 - [`performanceprofile/plot_newcompare_lp.m`](performanceprofile/plot_newcompare_lp.m) computes the shifted geometric mean (SGM) and normalized SGM and plots running-time performance profiles. Before use, update the input paths, selected test instances, shift parameter, time limit, and solver names for the experiment. The directory for resolution $128\times128$ is currently named `sclale_128`.
 - [`data_2048/Guass-Cauchy_Gauss.txt`](data_2048/Guass-Cauchy_Gauss.txt) records an experiment on a $2048\times2048$ grid. [`Iter_time.m`](data_2048/Iter_time.m) plots the number of IPRM iterations and running time. [`Fill_lineartime.m`](data_2048/Fill_lineartime.m) plots the average time per step for solving the linear system and the average filling rate of the active set.
 
-Reproducing the reported SGM values requires the same test instances and parameter settings. The recorded running times do not include the original image-pair indices for every set of randomly selected instances, and additional scripts are needed for some experiments in the manuscript. Running times also depend on the machine and MATLAB version.
+For each image class, ten image pairs are selected at each of the $128\times128$ and $256\times256$ resolutions, and five image pairs are selected at the $512\times512$ resolution. The selected image pairs are listed in the `pairs` definitions in `demo.m`. Reproducing the reported SGM values requires the same test instances and parameter settings. Running times may vary with the machine and MATLAB version.
 
 ## Citation
 
