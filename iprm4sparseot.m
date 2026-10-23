@@ -1,4 +1,4 @@
-function [x,s,lambda,z,residue,iter,mu,rho,opt] = iprm4ot2(input_m,input_n,c_Spt,b,x,s,lambda,R,p,Spt,mu,rho,tol,maxit,printlevel)
+function [x,s,lambda,z,residue,iter,mu,rho,opt] = iprm4sparseot(input_m,input_n,c_Spt,b,x,s,lambda,R,p,Spt,mu,rho,tol,maxit,printlevel)
 b0=b(1:end-1);
 [Spt_i,Spt_j]=find(Spt);
 b1=b(1:input_m);
@@ -237,40 +237,6 @@ else
     alpha=1;
 end
 
-% if mu>3e-4  &&  iter<10
-%     alpha=1;
-% elseif mu>3e-4 && iter>=10 
-%     alpha0=0.25;
-%     if alpha<=alpha0/4
-%         alpha=2*alpha;
-%     else
-%         alpha=alpha0;
-%     end
-% elseif mu>3e-5 && iter>=5  &&  mu<3e-4
-%     alpha0=0.25;
-%      if alpha<=alpha0/4
-%         alpha=2*alpha;
-%     else
-%         alpha=alpha0;
-%     end
-% elseif  mu<3e-6  &&  phi>3e-7
-%     alpha0=0.5;
-%      if alpha<=alpha0/4
-%         alpha=2*alpha;
-%     else
-%         alpha=alpha0;
-%     end
-% elseif  mu<3e-6  &&  phi<3e-7 
-%     alpha0=1;
-%     if alpha<=alpha0/4
-%         alpha=2*alpha;
-%     else
-%         alpha=alpha0;
-%     end
-% else
-%     alpha=1;
-% end
-    %alpha=1;
     linsh=1;
     newx=x+alpha*dx;
     news=s+alpha*ds;
@@ -425,7 +391,6 @@ end
 function result = MAIN_FUNC(D,V2,p,x)
     result = (V2(p)).*x - D*(D'*x);
 end
-
 
 function result = MAIN_FUNC2(DD,V1,V2,x)
     result = (V2).*x - DD*((DD'*x)./(V1'));

@@ -1,4 +1,4 @@
-function [x,s,lambda,z,opt,iter] = iprm4ot0(input_m,input_n,Su,De,printlevel)
+function [x,s,lambda,z,opt,iter] = iprm4denseot(input_m,input_n,Su,De,printlevel)
 persistent use
 tol=1e-6;
 maxit=100;
@@ -232,8 +232,6 @@ end
     end
     mu=nmu;
     %y=mu./z;
-
-    %% 如果注释掉这块算的更快精度更高但目标值不太对
     while mu > eta*max(epsi/eta,phi)
         mu = mu /eta;
         [z,t] = compz(rho,mu,s,x);
@@ -253,9 +251,6 @@ end
 
 u=c-matTvec0(input_m,input_n,lambda);
 u=u(u<0);
-uu=x-s;
-uu(uu<0)=0;
-uu=x-uu;  
 
 fprintf('iterations: %4d\n', iter);
 fprintf('primal feasibility: %8.2e\n', norm(matvec0(input_m,input_n,x)-b0)/(1+norm(b0)));
